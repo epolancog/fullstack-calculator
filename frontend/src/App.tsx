@@ -5,7 +5,7 @@ const api = new HttpCalculatorApi();
 
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+    <div className="bg-gradient-animated min-h-screen flex items-center justify-center p-4">
       <Calculator api={api} />
     </div>
   );

@@ -101,7 +101,7 @@ export function ButtonGrid({
   }
 
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-4 gap-2.5">
       {buttons.map((button) => (
         <Button
           key={button.value === "0" ? "zero" : button.value}

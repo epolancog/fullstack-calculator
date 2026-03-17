@@ -9,21 +9,22 @@ const buttonVariants = cva(
     "cursor-pointer select-none",
     "transition-all duration-150 ease-in-out",
     "active:scale-95",
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40",
     "disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100",
-    "min-h-[48px] text-lg",
+    "min-h-12 text-lg",
+    "backdrop-blur-sm",
   ],
   {
     variants: {
       variant: {
         number:
-          "bg-white/10 border-white/20 text-white hover:bg-white/20",
+          "bg-glass-button border-glass-border text-white hover:bg-glass-button-hover",
         operator:
-          "bg-indigo-500/30 border-indigo-400/30 text-indigo-200 hover:bg-indigo-500/40",
+          "bg-accent-muted border-accent-border text-indigo-100 hover:bg-accent/40",
         action:
-          "bg-white/5 border-white/10 text-gray-300 hover:bg-white/15",
+          "bg-white/5 border-white/8 text-gray-300 hover:bg-white/12",
         equals:
-          "bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-500",
+          "bg-accent border-accent-hover text-white font-semibold hover:bg-accent-hover shadow-lg shadow-accent/20",
       } satisfies Record<ButtonVariant, string>,
       size: {
         default: "col-span-1",

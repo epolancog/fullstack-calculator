@@ -8,7 +8,7 @@ export function ErrorMessage({ message }: ErrorMessageProps) {
   return (
     <div
       role="alert"
-      className="flex items-center gap-2 rounded-lg bg-red-500/15 border border-red-400/30 px-3 py-2 text-sm text-red-300"
+      className="animate-shake flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-400/20 backdrop-blur-sm px-3 py-2 text-sm text-red-300"
     >
       <span aria-hidden="true">⚠</span>
       <span>{message}</span>

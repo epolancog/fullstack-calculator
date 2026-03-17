@@ -189,6 +189,9 @@ function calculatorReducer(
     }
 
     case "SQRT": {
+      // Ignore if expression already ends with "sqrt "
+      if (state.expression.endsWith("sqrt ")) return state;
+
       // After result, apply sqrt to result
       if (state.result !== null) {
         return {

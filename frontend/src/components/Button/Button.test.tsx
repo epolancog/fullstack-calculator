@@ -12,13 +12,13 @@ describe("Button", () => {
   it("applies number variant classes by default", () => {
     render(<Button label="5" onClick={() => {}} />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("bg-white/10");
+    expect(button.className).toContain("bg-glass-button");
   });
 
   it("applies operator variant classes", () => {
     render(<Button label="+" variant="operator" onClick={() => {}} />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("bg-indigo-500/30");
+    expect(button.className).toContain("bg-accent-muted");
   });
 
   it("applies action variant classes", () => {
@@ -30,7 +30,7 @@ describe("Button", () => {
   it("applies equals variant classes", () => {
     render(<Button label="=" variant="equals" onClick={() => {}} />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("bg-indigo-600");
+    expect(button.className).toContain("bg-accent");
   });
 
   it("applies wide class for size='wide'", () => {

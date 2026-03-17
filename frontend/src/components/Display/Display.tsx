@@ -31,20 +31,20 @@ export function Display({
   const mainDisplay = result !== null ? formatNumber(result) : currentInput || "0";
 
   return (
-    <div className="w-full rounded-xl bg-black/30 border border-white/10 p-4">
+    <div className="w-full rounded-xl bg-black/40 border border-white/5 p-4 shadow-inner">
       <div
-        className="text-right text-sm text-gray-400 min-h-[1.25rem] overflow-hidden text-ellipsis whitespace-nowrap"
+        className="text-right text-sm text-gray-400 min-h-5 overflow-hidden text-ellipsis whitespace-nowrap tracking-wide"
         aria-label="expression"
       >
         {expression || "\u00A0"}
       </div>
       <div
-        className="text-right text-3xl font-semibold text-white min-h-[2.5rem] overflow-hidden text-ellipsis whitespace-nowrap"
+        className={`text-right text-3xl font-light text-white min-h-10 overflow-hidden text-ellipsis whitespace-nowrap tracking-tight ${result === null ? "" : "animate-fade-in"}`}
         aria-live="polite"
         aria-label="display value"
       >
         {isLoading ? (
-          <span className="animate-pulse text-gray-400">...</span>
+          <span className="animate-pulse text-gray-500">...</span>
         ) : (
           mainDisplay
         )}

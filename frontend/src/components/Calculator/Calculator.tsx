@@ -66,7 +66,7 @@ export function Calculator({ api }: CalculatorProps) {
   }, [handleKeyDown]);
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-sm p-4">
+    <div className="flex flex-col gap-3 w-full max-w-100 rounded-2xl bg-glass-bg backdrop-blur-2xl border border-glass-border shadow-2xl shadow-black/40 p-5 sm:p-6">
       <Display
         expression={state.expression}
         currentInput={state.currentInput}

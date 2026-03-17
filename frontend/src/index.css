@@ -1,1 +1,58 @@
 @import "tailwindcss";
+
+@theme {
+  --color-glass-bg: oklch(0.2 0.02 260 / 0.6);
+  --color-glass-border: oklch(0.9 0 0 / 0.12);
+  --color-glass-button: oklch(0.9 0 0 / 0.08);
+  --color-glass-button-hover: oklch(0.9 0 0 / 0.15);
+  --color-accent: oklch(0.65 0.2 270);
+  --color-accent-hover: oklch(0.7 0.22 270);
+  --color-accent-muted: oklch(0.55 0.15 270 / 0.35);
+  --color-accent-border: oklch(0.6 0.18 270 / 0.4);
+}
+
+/* Animated gradient background */
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gradient-rotate {
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.bg-gradient-animated {
+  --gradient-angle: 0deg;
+  background: conic-gradient(
+    from var(--gradient-angle) at 50% 50%,
+    oklch(0.22 0.08 280),
+    oklch(0.16 0.06 240),
+    oklch(0.24 0.1 300),
+    oklch(0.14 0.04 220),
+    oklch(0.20 0.07 260),
+    oklch(0.22 0.08 280)
+  );
+  animation: gradient-rotate 20s linear infinite;
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
