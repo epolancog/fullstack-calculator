@@ -1,0 +1,29 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+*.test
+vendor/
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage.out
+coverage.html

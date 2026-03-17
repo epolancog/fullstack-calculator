@@ -229,19 +229,19 @@ fullstack-calculator/
 
 ### Steps
 
-- [ ] **1.1** Initialize Go module
+- [x] **1.1** Initialize Go module
   - `cd backend && go mod init github.com/epolancog/fullstack-calculator/backend`
   - Create directory structure: `cmd/server/`, `internal/calculator/`, `internal/handler/`, `internal/middleware/`, `internal/validator/`
 
-- [ ] **1.2** Implement `Operator` interface and concrete operators (`internal/calculator/operator.go`)
+- [x] **1.2** Implement `Operator` interface and concrete operators (`internal/calculator/operator.go`)
   - `Operator` interface: `Execute(a, b float64) (float64, error)`
   - Concrete operators: `Add`, `Subtract`, `Multiply`, `Divide`, `Power`, `SquareRoot`, `Percentage`
   - `Divide` returns error on division by zero
-  - `SquareRoot` returns error on negative input (uses only operand_a, ignores operand_b)
-  - `Percentage` is unary — uses only operand_a, returns `a / 100` (e.g., `50` → `0.5`)
+  - `SquareRoot` returns error on negative input (uses only operand_a, ignores operand_b). Uniform `Execute(a, b)` interface — `/api/calculate` sends any value for `operand_b`, it is ignored.
+  - `Percentage` is unary — uses only operand_a, returns `a / 100` (e.g., `50` → `0.5`). The context-dependent behavior (percent-of-left-operand with `+`/`-`) lives only in `expression.go`, NOT in `Operator.Execute()`.
   - Each operator is a struct satisfying the interface (strategy pattern)
 
-- [ ] **1.3** Write operator unit tests (`internal/calculator/operator_test.go`)
+- [x] **1.3** Write operator unit tests (`internal/calculator/operator_test.go`)
   - Table-driven tests for each operator
   - Test cases:
     - Addition: positive, negative, zero, decimals
@@ -253,7 +253,7 @@ fullstack-calculator/
     - Percentage: `Percentage(50, _)` → `0.5`, `Percentage(100, _)` → `1.0`, `Percentage(0, _)` → `0`
   - Verify error messages are descriptive
 
-- [ ] **1.4** Implement `Calculator` interface and concrete implementation (`internal/calculator/calculator.go`)
+- [x] **1.4** Implement `Calculator` interface and concrete implementation (`internal/calculator/calculator.go`)
   - `Calculator` interface:
     ```go
     type Calculator interface {
@@ -267,7 +267,7 @@ fullstack-calculator/
   - `Calculate()` method: lookup operator, execute
   - `SupportedOperations()` method: return sorted list of operator keys
 
-- [ ] **1.5** Implement expression parser/evaluator (`internal/calculator/expression.go`)
+- [x] **1.5** Implement expression parser/evaluator (`internal/calculator/expression.go`)
   - Shunting-yard algorithm for parsing infix expressions
   - Supported tokens: numbers (int, float, negative), operators (`+`, `-`, `*`, `/`, `^`, `sqrt`, `%`), parentheses (`(`, `)`)
   - Operator precedence:
@@ -277,28 +277,29 @@ fullstack-calculator/
     - `sqrt`: precedence 4 (unary, prefix)
     - `%`: precedence 4 (unary, postfix — binds tightly to immediate left number)
   - **Percentage behavior (`%`)**: context-dependent based on the preceding binary operator:
-    - With `*` or `/`: simple divide-by-100. E.g., `200 * 10%` → `200 * 0.1` → `20`
     - With `+` or `-`: percent of the left operand. E.g., `50 + 10%` → `50 + (10% of 50)` → `55`
+    - **For everything else** (`*`, `/`, `^`, or standalone): simple divide-by-100. E.g., `200 * 10%` → `200 * 0.1` → `20`
     - Standalone: just divide by 100. E.g., `50%` → `0.5`
-    - No left operand: implicit `0`. E.g., `% 50` → `0`
+    - No left operand: implicit `0`, result is `0`. E.g., `%` → `0`, `% 50` → `0`.
     - Chained: each `%` applies to its immediate left value. E.g., `50%%` → `0.005`
-    - With `^`: `%` binds to the number, not the result. E.g., `2 ^ 3%` → `2 ^ 0.03` (Google-style)
+    - With `^`: `%` binds to the number (precedence 4 > 3), not the result. E.g., `2 ^ 3%` → `2 ^ 0.03` ≈ `1.021` (Google-style, NOT iOS-style `0.08`)
     - Implementation: during RPN evaluation, when processing `%`, peek at the pending binary operator to determine behavior (~20-25 extra lines in evaluator)
   - Parentheses: `(` and `)` handled natively by shunting-yard algorithm for grouping sub-expressions
   - Tokenizer: split expression string into number and operator tokens
   - **Unary minus (negative numbers)**: during tokenization, if `-` appears at the start of the expression, immediately after another operator, or immediately after `(`, treat it as part of the next number (unary negation), not as the binary subtraction operator. This is ~5-10 extra lines in the tokenizer.
-  - **`sqrt` syntax**: space-required, e.g., `sqrt 16`. `sqrt16` (no space) is rejected as an invalid token. `sqrt` has precedence 4 so it binds only to the immediate next value; use parentheses for complex operands: `sqrt (16 + 9)`
+  - **`sqrt` as unary prefix in shunting-yard**: `sqrt` is treated as a unary prefix operator with precedence 4. It is pushed onto the operator stack like a function. During RPN evaluation, it pops exactly one value. E.g., `sqrt 16 + 9` → `sqrt` binds to `16` → `4 + 9` → `13`. Use parentheses for complex operands: `sqrt (16 + 9)` → `sqrt 25` → `5`.
+  - **`sqrt` syntax**: space-required, e.g., `sqrt 16`. `sqrt16` (no space) is rejected as an invalid token.
   - Evaluator: convert to postfix (RPN) via shunting-yard, then evaluate the RPN stack
   - Error handling: malformed expressions, mismatched operators/operands, division by zero during evaluation
   - `EvaluateExpression()` wired into the `Calculator` implementation
 
-- [ ] **1.6** Write calculator unit tests (`internal/calculator/calculator_test.go`)
+- [x] **1.6** Write calculator unit tests (`internal/calculator/calculator_test.go`)
   - `Calculate()` tests:
     - Valid operations for each operator
     - Unknown operator → error
   - `SupportedOperations()` test: returns expected list
 
-- [ ] **1.7** Write expression evaluator tests (`internal/calculator/expression_test.go`)
+- [x] **1.7** Write expression evaluator tests (`internal/calculator/expression_test.go`)
   - Precedence tests:
     - `"5 + 3 * 2"` → `11` (not 16)
     - `"10 - 2 * 3 + 4"` → `8`
@@ -331,6 +332,8 @@ fullstack-calculator/
     - `"50%%"` → `0.005` (chained: 50%=0.5, then 0.5%=0.005)
     - `"(50 + 10)%"` → `0.6` (after parens, divide by 100)
     - `"2 * 3 + 50%"` → `9` (mid-precedence: 6 + 50% of 6 = 9)
+    - `"2 ^ 3%"` → `≈1.021` (Google-style: 3% = 0.03, then 2^0.03)
+    - `"%"` → `0` (no left operand, implicit 0)
   - Parentheses tests:
     - `"(5 + 3) * 2"` → `16`
     - `"((2 + 3)) * 4"` → `20`
@@ -341,23 +344,23 @@ fullstack-calculator/
     - `"2 ^ 3 * 2 + 1"` → `17`
     - `"(2 + 3) * (4 - 1)"` → `15`
 
-- [ ] **1.8** Run tests and verify coverage
+- [x] **1.8** Run tests and verify coverage
   - `go test ./internal/calculator/... -v -cover`
   - Target: 95%+ coverage on the calculator package
   - Fix any failing tests
 
-- [ ] **1.9** Create root `.gitignore`
+- [x] **1.9** Create root `.gitignore`
   - Go: binaries, `vendor/`, `*.exe`, `*.out`
   - Node: `node_modules/`, `dist/`, `.env`
   - IDE: `.vscode/`, `.idea/`
   - OS: `.DS_Store`, `Thumbs.db`
 
-- [ ] **1.10** Create root `Makefile` (backend targets only for now)
+- [x] **1.10** Create root `Makefile` (backend targets only for now)
   - `make test-backend` — run Go tests with coverage
   - `make run-backend` — run the server (placeholder, will wire in Session 2)
   - `make coverage-backend` — generate coverage report
 
-- [ ] **1.11** Commit all changes
+- [x] **1.11** Commit all changes
 
 ### Manual Test Scenarios (Session 1)
 
@@ -1168,7 +1171,7 @@ Update this section at the start/end of each session to track overall progress.
 
 | Session | Status | Date Started | Date Completed | Notes |
 |---------|--------|-------------|----------------|-------|
-| 1 — Go Calculation Engine | Not Started | — | — | — |
+| 1 — Go Calculation Engine | Completed | 2026-03-17 | 2026-03-17 | All tests pass, 95.1% coverage |
 | 2 — Go HTTP API Layer | Not Started | — | — | — |
 | 3 — Frontend Scaffolding | Not Started | — | — | — |
 | 4 — Calculator Logic & UI | Not Started | — | — | — |
