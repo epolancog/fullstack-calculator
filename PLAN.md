@@ -238,6 +238,7 @@ fullstack-calculator/
   - Concrete operators: `Add`, `Subtract`, `Multiply`, `Divide`, `Power`, `SquareRoot`, `Percentage`
   - `Divide` returns error on division by zero
   - `SquareRoot` returns error on negative input (uses only operand_a, ignores operand_b)
+  - `Percentage` is unary — uses only operand_a, returns `a / 100` (e.g., `50` → `0.5`)
   - Each operator is a struct satisfying the interface (strategy pattern)
 
 - [ ] **1.3** Write operator unit tests (`internal/calculator/operator_test.go`)
@@ -249,7 +250,7 @@ fullstack-calculator/
     - Division: normal, by zero (error), decimals
     - Power: positive exponent, zero exponent, negative exponent
     - SquareRoot: positive, zero, negative (error)
-    - Percentage: basic percentage calculation
+    - Percentage: `Percentage(50, _)` → `0.5`, `Percentage(100, _)` → `1.0`, `Percentage(0, _)` → `0`
   - Verify error messages are descriptive
 
 - [ ] **1.4** Implement `Calculator` interface and concrete implementation (`internal/calculator/calculator.go`)
@@ -268,14 +269,25 @@ fullstack-calculator/
 
 - [ ] **1.5** Implement expression parser/evaluator (`internal/calculator/expression.go`)
   - Shunting-yard algorithm for parsing infix expressions
-  - Supported tokens: numbers (int, float, negative), operators (`+`, `-`, `*`, `/`, `^`, `sqrt`, `%`)
+  - Supported tokens: numbers (int, float, negative), operators (`+`, `-`, `*`, `/`, `^`, `sqrt`, `%`), parentheses (`(`, `)`)
   - Operator precedence:
     - `+`, `-`: precedence 1
-    - `*`, `/`, `%`: precedence 2
+    - `*`, `/`: precedence 2
     - `^`: precedence 3, right-associative
     - `sqrt`: precedence 4 (unary, prefix)
+    - `%`: precedence 4 (unary, postfix — binds tightly to immediate left number)
+  - **Percentage behavior (`%`)**: context-dependent based on the preceding binary operator:
+    - With `*` or `/`: simple divide-by-100. E.g., `200 * 10%` → `200 * 0.1` → `20`
+    - With `+` or `-`: percent of the left operand. E.g., `50 + 10%` → `50 + (10% of 50)` → `55`
+    - Standalone: just divide by 100. E.g., `50%` → `0.5`
+    - No left operand: implicit `0`. E.g., `% 50` → `0`
+    - Chained: each `%` applies to its immediate left value. E.g., `50%%` → `0.005`
+    - With `^`: `%` binds to the number, not the result. E.g., `2 ^ 3%` → `2 ^ 0.03` (Google-style)
+    - Implementation: during RPN evaluation, when processing `%`, peek at the pending binary operator to determine behavior (~20-25 extra lines in evaluator)
+  - Parentheses: `(` and `)` handled natively by shunting-yard algorithm for grouping sub-expressions
   - Tokenizer: split expression string into number and operator tokens
-  - **Unary minus (negative numbers)**: during tokenization, if `-` appears at the start of the expression or immediately after another operator, treat it as part of the next number (unary negation), not as the binary subtraction operator. This is ~5-10 extra lines in the tokenizer.
+  - **Unary minus (negative numbers)**: during tokenization, if `-` appears at the start of the expression, immediately after another operator, or immediately after `(`, treat it as part of the next number (unary negation), not as the binary subtraction operator. This is ~5-10 extra lines in the tokenizer.
+  - **`sqrt` syntax**: space-required, e.g., `sqrt 16`. `sqrt16` (no space) is rejected as an invalid token. `sqrt` has precedence 4 so it binds only to the immediate next value; use parentheses for complex operands: `sqrt (16 + 9)`
   - Evaluator: convert to postfix (RPN) via shunting-yard, then evaluate the RPN stack
   - Error handling: malformed expressions, mismatched operators/operands, division by zero during evaluation
   - `EvaluateExpression()` wired into the `Calculator` implementation
@@ -310,9 +322,24 @@ fullstack-calculator/
     - `"5 * -2 + 1"` → `-9` (negation with precedence)
     - `"-5 * -2"` → `10` (double negation)
     - `"10 / -2"` → `-5` (negation with division)
+  - Percentage (unary postfix, context-dependent) tests:
+    - `"50%"` → `0.5` (standalone, divide by 100)
+    - `"200 * 10%"` → `20` (with `*`, simple divide by 100)
+    - `"50 + 10%"` → `55` (with `+`, 10% of 50 added)
+    - `"50 - 20%"` → `40` (with `-`, 20% of 50 subtracted)
+    - `"100 + 10% + 20%"` → `132` (chained: 100+10=110, then 110+22=132)
+    - `"50%%"` → `0.005` (chained: 50%=0.5, then 0.5%=0.005)
+    - `"(50 + 10)%"` → `0.6` (after parens, divide by 100)
+    - `"2 * 3 + 50%"` → `9` (mid-precedence: 6 + 50% of 6 = 9)
+  - Parentheses tests:
+    - `"(5 + 3) * 2"` → `16`
+    - `"((2 + 3)) * 4"` → `20`
+    - `"10 * (2 + 3)"` → `50`
+    - Mismatched parentheses → error (e.g., `"(5 + 3"`, `"5 + 3)"`)
   - Complex expressions:
     - `"2 + 3 * 4 - 6 / 2"` → `11`
     - `"2 ^ 3 * 2 + 1"` → `17`
+    - `"(2 + 3) * (4 - 1)"` → `15`
 
 - [ ] **1.8** Run tests and verify coverage
   - `go test ./internal/calculator/... -v -cover`
@@ -344,6 +371,10 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
 | 4 | Division by zero returns error | Verified in test output | Descriptive error, no panic |
 | 5 | Sqrt of negative returns error | Verified in test output | Descriptive error, no panic |
 | 6 | Empty/invalid expression returns error | Verified in test output | Descriptive error, no panic |
+| 7 | Expression `(5 + 3) * 2` evaluates to 16 | Verified in test output | `16` (not 16 regardless — parentheses override precedence) |
+| 8 | Expression `200 * 10%` evaluates to 20 | Verified in test output | `20` (percentage with `*`) |
+| 9 | Expression `50 + 10%` evaluates to 55 | Verified in test output | `55` (percentage with `+`, 10% of 50) |
+| 10 | Mismatched parentheses returns error | Verified in test output | Descriptive error, no panic |
 
 ---
 
@@ -394,6 +425,7 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
   - Validations:
     - Operator is in the supported list
     - Expression is not empty
+    - Expression contains only valid characters (digits, operators, parentheses, spaces, decimal points)
     - Operands are finite numbers (not NaN, not Inf)
   - Return structured errors with error codes (`INVALID_OPERATOR`, `INVALID_OPERAND`, `INVALID_EXPRESSION`)
 
@@ -497,6 +529,8 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
 | 8 | CORS preflight | `curl -s -X OPTIONS http://localhost:8080/api/calculate -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: POST" -v 2>&1 \| grep -i "access-control"` | CORS headers present |
 | 9 | Invalid operator | `curl -s -X POST http://localhost:8080/api/calculate -H "Content-Type: application/json" -d '{"operand_a": 5, "operator": "invalid", "operand_b": 3}'` | 400 with `INVALID_OPERATOR` |
 | 10 | Complex expression | `curl -s -X POST http://localhost:8080/api/calculate/expression -H "Content-Type: application/json" -d '{"expression": "2 + 3 * 4 - 6 / 2"}'` | `{"result": 11, ...}` |
+| 11 | Percentage expression | `curl -s -X POST http://localhost:8080/api/calculate/expression -H "Content-Type: application/json" -d '{"expression": "200 * 10%"}'` | `{"result": 20, ...}` |
+| 12 | Parentheses expression | `curl -s -X POST http://localhost:8080/api/calculate/expression -H "Content-Type: application/json" -d '{"expression": "(5 + 3) * 2"}'` | `{"result": 16, ...}` |
 
 ---
 
@@ -675,7 +709,9 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
     - Prevent leading zeros (except `0.`)
     - Prevent consecutive operators (replace last operator)
     - `sqrt` is handled as a unary prefix operator
-    - **Negative numbers**: pressing `-` when there is no currentInput and expression is empty (or ends with an operator) starts a negative number (appends `-` to currentInput). The backend tokenizer handles the actual unary minus parsing.
+    - `%` is handled as a unary postfix operator — pressing `%` appends `%` to currentInput immediately (no second operand needed). E.g., typing `50` then `%` produces `50%` in the expression. Multiple `%` presses allowed (e.g., `50%%` → `0.005`).
+    - Parentheses: `(` and `)` buttons append to expression. Track open paren count to validate when `)` is allowed.
+    - **Negative numbers**: pressing `-` when there is no currentInput and expression is empty (or ends with an operator or `(`) starts a negative number (appends `-` to currentInput). The backend tokenizer handles the actual unary minus parsing.
   - Receives `CalculatorApi` as dependency (DIP — injectable for testing)
 
 - [ ] **4.2** Write useCalculator tests (`src/hooks/useCalculator.test.ts`)
@@ -727,16 +763,14 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Defines button layout as data (array of `CalculatorButton` objects)
   - Layout (4 columns, classic calculator):
     ```
-    [ C  ] [ ⌫  ] [  %  ] [  ÷  ]
+    [ C  ] [ ⌫  ] [  (  ] [  )  ]
+    [ √  ] [ ^  ] [  %  ] [  ÷  ]
     [ 7  ] [ 8  ] [  9  ] [  ×  ]
     [ 4  ] [ 5  ] [  6  ] [  -  ]
     [ 1  ] [ 2  ] [  3  ] [  +  ]
     [ 0 (wide) ] [  .  ] [ = (equals) ]
     ```
-  - Optional advanced row (above or integrated):
-    ```
-    [ √  ] [ ^  ]
-    ```
+  - Note: `%` is a unary postfix button (appends to current number, no second operand)
   - Renders Button components with correct variants
   - Passes click callbacks
 
@@ -745,6 +779,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Renders all operator buttons
   - Renders action buttons (C, ⌫, =)
   - Renders advanced operation buttons (√, ^, %)
+  - Renders parentheses buttons ((, ))
   - Click on button fires correct callback with correct value
 
 - [ ] **4.7** Implement Calculator container (`src/components/Calculator/Calculator.tsx`)
@@ -753,7 +788,9 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Passes state and callbacks down to children
   - Keyboard event listener:
     - `0-9`, `.` → digit/decimal
-    - `+`, `-`, `*`, `/`, `^`, `%` → operator
+    - `+`, `-`, `*`, `/`, `^` → binary operator
+    - `%` → postfix unary operator (appends to current number)
+    - `(`, `)` → parentheses
     - `Enter`, `=` → equals
     - `Escape` → clear
     - `Backspace` → backspace
@@ -837,7 +874,7 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
   - Subtle inner shadow for depth
 
 - [ ] **5.4** Style the ButtonGrid
-  - CSS Grid: 4 columns, consistent gap
+  - CSS Grid: 4 columns, 6 rows, consistent gap
   - Wide buttons span 2 columns
   - Consistent button height
 
@@ -1044,80 +1081,84 @@ After all 6 sessions are complete, run through this comprehensive end-to-end che
 | 7 | Multiplication | `6 × 8 =` | `48` |
 | 8 | Division | `15 ÷ 3 =` | `5` |
 | 9 | Exponentiation | `2 ^ 10 =` | `1024` |
-| 10 | Percentage | `200 % 3 =` | `2` (modulo) |
-| 11 | Square root | `√ 144 =` | `12` |
+| 10 | Percentage (multiply) | `200 × 10 % =` | `20` (10% of 200) |
+| 11 | Percentage (add) | `50 + 10 % =` | `55` (10% of 50, added) |
+| 12 | Square root | `√ 144 =` | `12` |
+| 13 | Parentheses | `( 5 + 3 ) × 2 =` | `16` |
 
 ### Calculator — Precedence
 
 | # | Scenario | Input | Expected Result |
 |---|----------|-------|-----------------|
-| 12 | Multiply before add | `5 + 3 × 2 =` | `11` |
-| 13 | Divide before subtract | `10 - 6 ÷ 2 =` | `7` |
-| 14 | Mixed precedence | `2 + 3 × 4 - 6 ÷ 2 =` | `11` |
-| 15 | Power precedence | `2 ^ 3 + 1 =` | `9` |
+| 14 | Multiply before add | `5 + 3 × 2 =` | `11` |
+| 15 | Divide before subtract | `10 - 6 ÷ 2 =` | `7` |
+| 16 | Mixed precedence | `2 + 3 × 4 - 6 ÷ 2 =` | `11` |
+| 17 | Power precedence | `2 ^ 3 + 1 =` | `9` |
+| 18 | Parentheses override precedence | `( 2 + 3 ) × 2 =` | `10` (not `8`) |
 
 ### Calculator — Edge Cases
 
 | # | Scenario | Input | Expected |
 |---|----------|-------|----------|
-| 16 | Division by zero | `10 ÷ 0 =` | Error message displayed |
-| 17 | Sqrt of negative | `√ -4 =` | Error message displayed |
-| 18 | Decimal input | `1.5 + 2.5 =` | `4` |
-| 19 | Large numbers | `999999 × 999999 =` | Correct result, no overflow in display |
-| 20 | Single number equals | `42 =` | `42` |
-| 21 | Double decimal prevented | `1..5` | Only one decimal: `1.5` |
-| 22 | Leading zero prevented | `007` | Displays `7` (or `0.07` if decimal) |
-| 23 | Negative number at start | `-5 + 3 =` | `-2` |
-| 24 | Negative after operator | `5 + -3 =` | `2` |
-| 25 | Negative with precedence | `5 * -2 + 1 =` | `-9` |
-| 26 | Double negation | `-5 * -2 =` | `10` |
+| 19 | Division by zero | `10 ÷ 0 =` | Error message displayed |
+| 20 | Sqrt of negative | `√ -4 =` | Error message displayed |
+| 21 | Decimal input | `1.5 + 2.5 =` | `4` |
+| 22 | Large numbers | `999999 × 999999 =` | Correct result, no overflow in display |
+| 23 | Single number equals | `42 =` | `42` |
+| 24 | Double decimal prevented | `1..5` | Only one decimal: `1.5` |
+| 25 | Leading zero prevented | `007` | Displays `7` (or `0.07` if decimal) |
+| 26 | Negative number at start | `-5 + 3 =` | `-2` |
+| 27 | Negative after operator | `5 + -3 =` | `2` |
+| 28 | Negative with precedence | `5 * -2 + 1 =` | `-9` |
+| 29 | Double negation | `-5 * -2 =` | `10` |
+| 30 | Mismatched parentheses | `( 5 + 3 =` | Error message displayed |
 
 ### Calculator — UX
 
 | # | Scenario | Input | Expected |
 |---|----------|-------|----------|
-| 27 | Clear button | Type digits, press C | Resets to initial state |
-| 28 | Backspace | Type `123`, press ⌫ | Shows `12` |
-| 29 | Keyboard digits | Type `5`, `+`, `3`, `Enter` on keyboard | Result `8` |
-| 30 | Keyboard Escape | Type digits, press Escape | Clears calculator |
-| 31 | Keyboard Backspace | Type digits, press Backspace | Removes last digit |
-| 32 | Consecutive operators | `5 + - 3 =` | Treats as `5 - 3 = 2` (replaced operator) |
-| 33 | Continue after result | `5 + 3 =` (shows 8), then `+ 2 =` | `10` (continues from result) |
-| 34 | New expression after result | `5 + 3 =` (shows 8), then type `7` | Starts fresh with `7` |
+| 31 | Clear button | Type digits, press C | Resets to initial state |
+| 32 | Backspace | Type `123`, press ⌫ | Shows `12` |
+| 33 | Keyboard digits | Type `5`, `+`, `3`, `Enter` on keyboard | Result `8` |
+| 34 | Keyboard Escape | Type digits, press Escape | Clears calculator |
+| 35 | Keyboard Backspace | Type digits, press Backspace | Removes last digit |
+| 36 | Consecutive operators | `5 + - 3 =` | Treats as `5 - 3 = 2` (replaced operator) |
+| 37 | Continue after result | `5 + 3 =` (shows 8), then `+ 2 =` | `10` (continues from result) |
+| 38 | New expression after result | `5 + 3 =` (shows 8), then type `7` | Starts fresh with `7` |
 
 ### Responsive Design
 
 | # | Scenario | How to Test | Expected |
 |---|----------|-------------|----------|
-| 35 | Mobile layout | DevTools → iPhone 14 (390px) | Full-width, touch-friendly buttons |
-| 36 | Tablet layout | DevTools → iPad (768px) | Centered, properly sized |
-| 37 | Desktop layout | Full browser window (1440px) | Centered card, max-width ~400px |
-| 38 | No horizontal scroll | All viewports | No overflow, no scrollbar |
+| 39 | Mobile layout | DevTools → iPhone 14 (390px) | Full-width, touch-friendly buttons |
+| 40 | Tablet layout | DevTools → iPad (768px) | Centered, properly sized |
+| 41 | Desktop layout | Full browser window (1440px) | Centered card, max-width ~400px |
+| 42 | No horizontal scroll | All viewports | No overflow, no scrollbar |
 
 ### Accessibility
 
 | # | Scenario | How to Test | Expected |
 |---|----------|-------------|----------|
-| 39 | Keyboard navigation | Tab through all buttons | Visible focus indicator on each |
-| 40 | Screen reader | Inspect aria attributes | Buttons have aria-labels, result has aria-live |
+| 43 | Keyboard navigation | Tab through all buttons | Visible focus indicator on each |
+| 44 | Screen reader | Inspect aria attributes | Buttons have aria-labels, result has aria-live |
 
 ### API (Direct)
 
 | # | Scenario | curl command | Expected |
 |---|----------|-------------|----------|
-| 41 | Single operation | `curl -X POST .../api/calculate -d '{"operand_a":5,"operator":"+","operand_b":3}'` | `{"result":8}` |
-| 42 | Expression | `curl -X POST .../api/calculate/expression -d '{"expression":"5 + 3 * 2"}'` | `{"result":11,...}` |
-| 43 | List operations | `curl .../api/operations` | JSON array |
-| 44 | Invalid input | `curl -X POST .../api/calculate -d '{"operand_a":5,"operator":"invalid","operand_b":3}'` | 400 error |
+| 45 | Single operation | `curl -X POST .../api/calculate -d '{"operand_a":5,"operator":"+","operand_b":3}'` | `{"result":8}` |
+| 46 | Expression | `curl -X POST .../api/calculate/expression -d '{"expression":"5 + 3 * 2"}'` | `{"result":11,...}` |
+| 47 | List operations | `curl .../api/operations` | JSON array |
+| 48 | Invalid input | `curl -X POST .../api/calculate -d '{"operand_a":5,"operator":"invalid","operand_b":3}'` | 400 error |
 
 ### Tests & Coverage
 
 | # | Scenario | Command | Expected |
 |---|----------|---------|----------|
-| 45 | Backend tests pass | `make test-backend` | All PASS |
-| 46 | Frontend tests pass | `make test-frontend` | All PASS |
-| 47 | Backend coverage | `make coverage-backend` | ≥ 95% |
-| 48 | Frontend coverage | Coverage report | ≥ 90% |
+| 49 | Backend tests pass | `make test-backend` | All PASS |
+| 50 | Frontend tests pass | `make test-frontend` | All PASS |
+| 51 | Backend coverage | `make coverage-backend` | ≥ 95% |
+| 52 | Frontend coverage | Coverage report | ≥ 90% |
 
 ---
 
