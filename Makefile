@@ -1,4 +1,4 @@
-.PHONY: test-backend run-backend coverage-backend install-frontend test-frontend dev-frontend
+.PHONY: test-backend run-backend coverage-backend install-frontend test-frontend dev-frontend docker-up docker-down
 
 test-backend:
 	cd backend && go test ./... -v -count=1
@@ -18,3 +18,9 @@ test-frontend:
 
 dev-frontend:
 	cd frontend && npm run dev
+
+docker-up:
+	docker-compose up --build
+
+docker-down:
+	docker-compose down

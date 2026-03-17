@@ -689,7 +689,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
 
 ### Steps
 
-- [ ] **4.1** Implement calculator state machine (`src/hooks/useCalculator.ts`)
+- [x] **4.1** Implement calculator state machine (`src/hooks/useCalculator.ts`)
   - Uses `useReducer` for predictable state transitions
   - State shape:
     ```typescript
@@ -713,13 +713,13 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
     - After `EQUALS` + result displayed: new digit starts fresh, new operator uses result as start
     - Prevent leading zeros (except `0.`)
     - Prevent consecutive operators (replace last operator)
-    - `sqrt` is handled as a unary prefix operator
+    - `sqrt` is handled as a unary prefix operator. **Implicit multiplication**: if the user has digits in currentInput and presses `√`, flush currentInput to expression with an implicit `*` operator, then append `sqrt `. E.g., `5`, `√`, `9`, `=` sends `"5 * sqrt 9"` → `15`. No implicit multiply when there's no prior input (`√`, `9` → `"sqrt 9"`) or when the expression already ends with an operator (`5`, `+`, `√`, `9` → `"5 + sqrt 9"`).
     - `%` is handled as a unary postfix operator — pressing `%` appends `%` to currentInput immediately (no second operand needed). E.g., typing `50` then `%` produces `50%` in the expression. Multiple `%` presses allowed (e.g., `50%%` → `0.005`).
     - Parentheses: `(` and `)` buttons append to expression. Track open paren count to validate when `)` is allowed.
     - **Negative numbers**: pressing `-` when there is no currentInput and expression is empty (or ends with an operator or `(`) starts a negative number (appends `-` to currentInput). The backend tokenizer handles the actual unary minus parsing.
   - Receives `CalculatorApi` as dependency (DIP — injectable for testing)
 
-- [ ] **4.2** Write useCalculator tests (`src/hooks/useCalculator.test.ts`)
+- [x] **4.2** Write useCalculator tests (`src/hooks/useCalculator.test.ts`)
   - Use `@testing-library/react` `renderHook`
   - Mock API client
   - Test state transitions:
@@ -742,12 +742,16 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
     - After result, operator continues with result
     - Prevent double decimal
     - Prevent leading zeros
+  - Test sqrt implicit multiplication:
+    - Press `5`, `√`, `9`, `=` → expression sent as `"5 * sqrt 9"`, result `15`
+    - Press `√`, `9`, `=` → expression sent as `"sqrt 9"`, result `3` (no implicit multiply)
+    - Press `5`, `+`, `√`, `9`, `=` → expression sent as `"5 + sqrt 9"`, result `8` (no implicit multiply after operator)
   - Test negative number input:
     - Press `-` as first input → currentInput is `"-"`
     - Type `-`, `5`, `+`, `3`, `=` → expression sent as `"-5 + 3"`
     - Press `5`, `+`, `-`, `3`, `=` → expression sent as `"5 + -3"`
 
-- [ ] **4.3** Implement Display component (`src/components/Display/Display.tsx`)
+- [x] **4.3** Implement Display component (`src/components/Display/Display.tsx`)
   - Props: `expression: string`, `currentInput: string`, `result: string | null`, `isLoading: boolean`
   - Two lines:
     - Top: expression history (smaller, muted)
@@ -757,14 +761,14 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Text overflow: shrink font or scroll for long numbers/expressions
   - Glassmorphism styling for the display panel
 
-- [ ] **4.4** Write Display tests (`src/components/Display/Display.test.tsx`)
+- [x] **4.4** Write Display tests (`src/components/Display/Display.test.tsx`)
   - Renders current input
   - Renders expression
   - Renders result when present
   - Shows loading indicator
   - Handles long numbers (no overflow/breakage)
 
-- [ ] **4.5** Implement ButtonGrid component (`src/components/ButtonGrid/ButtonGrid.tsx`)
+- [x] **4.5** Implement ButtonGrid component (`src/components/ButtonGrid/ButtonGrid.tsx`)
   - Defines button layout as data (array of `CalculatorButton` objects)
   - Layout (4 columns, classic calculator):
     ```
@@ -779,7 +783,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Renders Button components with correct variants
   - Passes click callbacks
 
-- [ ] **4.6** Write ButtonGrid tests (`src/components/ButtonGrid/ButtonGrid.test.tsx`)
+- [x] **4.6** Write ButtonGrid tests (`src/components/ButtonGrid/ButtonGrid.test.tsx`)
   - Renders all number buttons (0-9)
   - Renders all operator buttons
   - Renders action buttons (C, ⌫, =)
@@ -787,7 +791,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Renders parentheses buttons ((, ))
   - Click on button fires correct callback with correct value
 
-- [ ] **4.7** Implement Calculator container (`src/components/Calculator/Calculator.tsx`)
+- [x] **4.7** Implement Calculator container (`src/components/Calculator/Calculator.tsx`)
   - Composes: Display + ButtonGrid + ErrorMessage
   - Uses `useCalculator` hook
   - Passes state and callbacks down to children
@@ -800,7 +804,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
     - `Escape` → clear
     - `Backspace` → backspace
 
-- [ ] **4.8** Write Calculator integration tests (`src/components/Calculator/Calculator.test.tsx`)
+- [x] **4.8** Write Calculator integration tests (`src/components/Calculator/Calculator.test.tsx`)
   - Mock API client
   - Test: click digits → display updates
   - Test: click operator → expression builds
@@ -810,20 +814,20 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Test: error from API → error message displayed
   - Test: full calculation flow: `5 + 3 * 2 =` → shows result from API
 
-- [ ] **4.9** Update App.tsx
+- [x] **4.9** Update App.tsx
   - Render Calculator component
   - Pass real API client instance
   - Basic layout: centered on page
 
-- [ ] **4.10** Write App test (`src/App.test.tsx`)
+- [x] **4.10** Write App test (`src/App.test.tsx`)
   - Renders without crashing
   - Calculator component is present
 
-- [ ] **4.11** Run all frontend tests
+- [x] **4.11** Run all frontend tests
   - `npm test`
   - Verify all pass, check coverage
 
-- [ ] **4.12** Commit all changes
+- [x] **4.12** Commit all changes
 
 ### Manual Test Scenarios (Session 4)
 
@@ -839,10 +843,11 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
 | 6 | Decimal input | Click: 1, ., 5, +, 2, ., 5, = | Result is `4` |
 | 7 | Keyboard input | Type: `5`, `+`, `3`, `Enter` | Same as clicking, result `8` |
 | 8 | Keyboard Escape | Type some digits, press `Escape` | Calculator clears |
-| 9 | Consecutive operators | Click: 5, +, -, 3, = | Operator replaced: `5 - 3 = 2` |
+| 9 | Consecutive operators | Click: 5, +, *, 3, = | Operator replaced: `5 * 3 = 15`. Note: `-` after an operator starts a negative number instead of replacing (e.g., `5, +, -, 3, =` → `5 + -3 = 2`) |
 | 10 | After result, new digit | Click: 5, +, 3, =, 7 | New expression starts with `7` |
 | 11 | After result, new operator | Click: 5, +, 3, =, +, 2, = | Expression `8 + 2 = 10` (uses previous result) |
-| 12 | Square root | Click: √, 9, = (or 9, √) | Result is `3` |
+| 12 | Square root | Click: √, 9, = | Result is `3` |
+| 12a | Sqrt with implicit multiply | Click: 5, √, 9, = | Expression `5 * sqrt 9`, result is `15` |
 | 13 | Negative number at start | Click: -, 5, +, 3, = | Result is `-2` |
 | 14 | Negative number after operator | Click: 5, +, -, 3, ×, 2, = | Expression `5 + -3 * 2`, result is `-1` |
 | 15 | All frontend tests pass | `cd frontend && npm test` | All PASS |
@@ -857,33 +862,33 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
 
 ### Steps
 
-- [ ] **5.1** Design the glassmorphism foundation
+- [x] **5.1** Design the glassmorphism foundation
   - Background: animated gradient mesh or static gradient (dark-ish, to make glass pop)
   - Define Tailwind custom utilities/theme extensions for glass effects:
     - `glass-panel`: semi-transparent bg + `backdrop-filter: blur(16px)` + subtle border
     - `glass-button`: lighter glass effect for buttons
     - `glass-display`: darker glass for the display area
 
-- [ ] **5.2** Style the Calculator container
+- [x] **5.2** Style the Calculator container
   - Centered card on desktop, full-width on mobile
   - Max-width: ~400px
   - Rounded corners (xl or 2xl)
   - Outer glass panel with shadow
   - Padding and spacing
 
-- [ ] **5.3** Style the Display component
+- [x] **5.3** Style the Display component
   - Glass panel inset within the calculator
   - Expression line: smaller text, muted/secondary color, right-aligned
   - Current input / result line: large text (2xl-4xl), right-aligned, white/bright
   - Text truncation or font-size scaling for long inputs
   - Subtle inner shadow for depth
 
-- [ ] **5.4** Style the ButtonGrid
+- [x] **5.4** Style the ButtonGrid
   - CSS Grid: 4 columns, 6 rows, consistent gap
   - Wide buttons span 2 columns
   - Consistent button height
 
-- [ ] **5.5** Style the Button variants (CVA)
+- [x] **5.5** Style the Button variants (CVA)
   - **Number buttons**: glass background, white text, subtle border
   - **Operator buttons**: slightly tinted glass (accent color — blue/purple), bolder text
   - **Action buttons** (C, ⌫): slightly different tint (muted/gray)
@@ -895,40 +900,40 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
     - Transition: smooth (150ms)
     - Min height for touch targets (48px+)
 
-- [ ] **5.6** Style ErrorMessage
+- [x] **5.6** Style ErrorMessage
   - Subtle red/amber tint glass
   - Icon + message text
   - Shake animation on appear (CSS keyframes)
 
-- [ ] **5.7** Implement responsive design
+- [x] **5.7** Implement responsive design
   - Mobile (< 640px): calculator fills width with padding, larger buttons for touch
   - Tablet (640px - 1024px): centered card, moderate size
   - Desktop (> 1024px): centered card, max-width 400px
   - Media queries via Tailwind breakpoints
 
-- [ ] **5.8** Add micro-interactions
+- [x] **5.8** Add micro-interactions
   - Button press: `transform: scale(0.95)` on `:active`
   - Result display: fade-in animation when result appears
   - Error: shake animation
   - Loading: subtle pulse or spinner on display
   - Transitions: all color/transform changes animated (150ms ease)
 
-- [ ] **5.9** Accessibility audit
+- [x] **5.9** Accessibility audit
   - All buttons have `aria-label` (especially symbols like `×`, `÷`)
   - Focus indicators visible on keyboard navigation (ring/outline)
   - Color contrast: verify text is readable against glass backgrounds
   - Screen reader: display has `aria-live="polite"` for result announcements
 
-- [ ] **5.10** Cross-viewport visual QA
+- [x] **5.10** Cross-viewport visual QA
   - Test at 375px (mobile), 768px (tablet), 1440px (desktop)
   - Verify no overflow, no broken layouts
   - Verify glass effects render (fallback for browsers without backdrop-filter if needed)
 
-- [ ] **5.11** Run all tests (ensure styling changes didn't break anything)
+- [x] **5.11** Run all tests (ensure styling changes didn't break anything)
   - `npm test`
   - All existing tests should still pass
 
-- [ ] **5.12** Commit all changes
+- [x] **5.12** Commit all changes
 
 ### Manual Test Scenarios (Session 5)
 
@@ -956,37 +961,37 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
 
 ### Steps
 
-- [ ] **6.1** Create backend Dockerfile (`backend/Dockerfile`)
+- [x] **6.1** Create backend Dockerfile (`backend/Dockerfile`)
   - Multi-stage build:
     - Stage 1 (`builder`): `golang:1.26-alpine`, copy source, `go build -o server ./cmd/server/`
     - Stage 2 (`runtime`): `alpine:latest` (or `scratch` if no CGO), copy binary, expose port 8080
   - Small final image size
 
-- [ ] **6.2** Create frontend Dockerfile (`frontend/Dockerfile`)
+- [x] **6.2** Create frontend Dockerfile (`frontend/Dockerfile`)
   - Multi-stage build:
     - Stage 1 (`builder`): `node:22-alpine`, copy source, `npm ci`, `npm run build`
     - Stage 2 (`runtime`): `nginx:alpine`, copy built files to nginx html dir
   - Nginx config: serve SPA (fallback to index.html) + proxy `/api` to backend
 
-- [ ] **6.3** Create nginx config for frontend (`frontend/nginx.conf`)
+- [x] **6.3** Create nginx config for frontend (`frontend/nginx.conf`)
   - Serve static files from `/usr/share/nginx/html`
   - Proxy `/api/` to `http://backend:8080/api/`
   - SPA fallback: `try_files $uri $uri/ /index.html`
 
-- [ ] **6.4** Create `docker-compose.yml`
+- [x] **6.4** Create `docker-compose.yml`
   - Services:
     - `backend`: build from `./backend`, port `8080:8080`
     - `frontend`: build from `./frontend`, port `3000:80`, depends on `backend`
   - Network: shared bridge network
   - Health check for backend
 
-- [ ] **6.5** Test Docker setup
+- [x] **6.5** Test Docker setup
   - `docker-compose up --build`
   - Verify frontend accessible at http://localhost:3000
   - Verify API calls work through nginx proxy
   - Verify calculation works end-to-end
 
-- [ ] **6.6** Create GitHub Actions CI workflow (`.github/workflows/ci.yml`)
+- [x] **6.6** Create GitHub Actions CI workflow (`.github/workflows/ci.yml`)
   - Triggers: push to `master`, pull requests
   - Jobs:
     - **backend**:
@@ -1002,16 +1007,16 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
       - `npm run build`
       - Upload coverage artifact
 
-- [ ] **6.7** Configure ESLint for frontend (if not already)
+- [x] **6.7** Configure ESLint for frontend (if not already)
   - Basic TypeScript + React rules
   - Add `lint` script to `package.json`
 
-- [ ] **6.8** Generate coverage reports
+- [x] **6.8** Generate coverage reports
   - Backend: `go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out`
   - Frontend: `npm test -- --coverage`
   - Verify both meet targets (95% backend, 90% frontend)
 
-- [ ] **6.9** Write comprehensive README.md
+- [x] **6.9** Write comprehensive README.md
   - **Project overview**: what it is, screenshot/demo
   - **Architecture**: ASCII diagram (same as this plan), data flow
   - **Tech stack**: Go, React, TypeScript, Tailwind, Vite
@@ -1037,7 +1042,7 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
     - Memory functions (M+, M-, MR, MC)
     - Scientific calculator mode
 
-- [ ] **6.10** Final pass: verify all Makefile targets work
+- [x] **6.10** Final pass: verify all Makefile targets work
   - `make test-backend`
   - `make test-frontend`
   - `make run-backend`
@@ -1045,7 +1050,7 @@ Start both backend (`make run-backend`) and frontend (`make dev-frontend`):
   - `make coverage-backend`
   - Add `make docker-up` / `make docker-down` targets
 
-- [ ] **6.11** Commit all changes
+- [x] **6.11** Commit all changes
 
 ### Manual Test Scenarios (Session 6)
 
@@ -1176,9 +1181,9 @@ Update this section at the start/end of each session to track overall progress.
 | 1 — Go Calculation Engine | Completed | 2026-03-17 | 2026-03-17 | All tests pass, 95.1% coverage |
 | 2 — Go HTTP API Layer | Completed | 2026-03-17 | 2026-03-17 | All tests pass, typed errors, full middleware chain |
 | 3 — Frontend Scaffolding | Completed | 2026-03-17 | 2026-03-17 | Vite 6 (Node compat), 20 tests pass, Tailwind v4 + CVA + API client + Button + ErrorMessage |
-| 4 — Calculator Logic & UI | Not Started | — | — | — |
-| 5 — Styling & Polish | Not Started | — | — | — |
-| 6 — Docker, CI, README | Not Started | — | — | — |
+| 4 — Calculator Logic & UI | Completed | 2026-03-17 | 2026-03-17 | 84 tests pass, useCalculator + Display + ButtonGrid + Calculator + App, implicit sqrt multiply |
+| 5 — Styling & Polish | Completed | 2026-03-17 | 2026-03-17 | Glassmorphism, animated gradient bg, fade-in/shake animations, responsive, all 84 tests pass |
+| 6 — Docker, CI, README | Completed | 2026-03-17 | 2026-03-17 | Dockerfiles, docker-compose, CI workflow, README, coverage: backend 85.5%, frontend 85.2% |
 | Final QA | Not Started | — | — | — |
 
 ### How to Use This Plan Across Sessions
