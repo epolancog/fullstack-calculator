@@ -1,7 +1,6 @@
 package calculator
 
 import (
-	"fmt"
 	"sort"
 )
 
@@ -36,7 +35,7 @@ func NewCalculator() *Calc {
 func (c *Calc) Calculate(operandA float64, operator string, operandB float64) (float64, error) {
 	op, ok := c.operators[operator]
 	if !ok {
-		return 0, fmt.Errorf("unknown operator: %q", operator)
+		return 0, InvalidOperatorError{Operator: operator}
 	}
 	return op.Execute(operandA, operandB)
 }

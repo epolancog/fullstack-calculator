@@ -1,7 +1,6 @@
 package calculator
 
 import (
-	"errors"
 	"math"
 )
 
@@ -36,7 +35,7 @@ type Divide struct{}
 
 func (Divide) Execute(a, b float64) (float64, error) {
 	if b == 0 {
-		return 0, errors.New("division by zero is not allowed")
+		return 0, DivisionByZeroError{}
 	}
 	return a / b, nil
 }
@@ -53,7 +52,7 @@ type SquareRoot struct{}
 
 func (SquareRoot) Execute(a, _ float64) (float64, error) {
 	if a < 0 {
-		return 0, errors.New("square root of negative number is not allowed")
+		return 0, SqrtNegativeError{}
 	}
 	return math.Sqrt(a), nil
 }

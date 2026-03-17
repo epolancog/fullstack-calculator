@@ -389,7 +389,7 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
 
 ### Steps
 
-- [ ] **2.1** Implement request/response DTOs (`internal/handler/request.go`, `internal/handler/response.go`)
+- [x] **2.1** Implement request/response DTOs (`internal/handler/request.go`, `internal/handler/response.go`)
   - Request DTOs:
     ```go
     type CalculateRequest struct {
@@ -422,7 +422,8 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
     }
     ```
 
-- [ ] **2.2** Implement input validator (`internal/validator/validator.go`)
+- [x] **2.2** Implement input validator (`internal/validator/validator.go`)
+  - Validator receives supported operations list as a parameter (decoupled from calculator package)
   - `ValidateCalculateRequest(req)` → error with code
   - `ValidateExpressionRequest(req)` → error with code
   - Validations:
@@ -432,14 +433,14 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
     - Operands are finite numbers (not NaN, not Inf)
   - Return structured errors with error codes (`INVALID_OPERATOR`, `INVALID_OPERAND`, `INVALID_EXPRESSION`)
 
-- [ ] **2.3** Write validator tests (`internal/validator/validator_test.go`)
+- [x] **2.3** Write validator tests (`internal/validator/validator_test.go`)
   - Valid requests pass
   - Empty operator → `INVALID_OPERATOR`
   - Unsupported operator → `INVALID_OPERATOR`
   - NaN/Inf operand → `INVALID_OPERAND`
   - Empty expression → `INVALID_EXPRESSION`
 
-- [ ] **2.4** Implement HTTP handlers (`internal/handler/handler.go`)
+- [x] **2.4** Implement HTTP handlers (`internal/handler/handler.go`)
   - `Handler` struct with `Calculator` interface dependency (DIP)
   - `NewHandler(calc Calculator) *Handler`
   - `RegisterRoutes(mux *http.ServeMux)` method
@@ -452,9 +453,10 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
     2. Validate input
     3. Call calculator
     4. Encode JSON response
+  - Error code mapping uses typed errors in the calculator package (e.g., `DivisionByZeroError`, `SqrtNegativeError`) — not string matching. Handlers use `errors.As()` to determine the error code.
   - Proper HTTP status codes: 200 (success), 400 (validation/calc error), 405 (method not allowed), 500 (unexpected)
 
-- [ ] **2.5** Implement middleware (`internal/middleware/`)
+- [x] **2.5** Implement middleware (`internal/middleware/`)
   - **CORS** (`cors.go`):
     - Allow origins: `*` (configurable)
     - Allow methods: `GET, POST, OPTIONS`
@@ -467,10 +469,10 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
     - Catch panics, return 500 with generic error
     - Log the panic + stack trace
   - **Content-Type** (`content_type.go`):
-    - For POST requests, enforce `Content-Type: application/json`
+    - For POST requests only, enforce `Content-Type: application/json`. GET requests are exempt (no body).
     - Return 415 (Unsupported Media Type) otherwise
 
-- [ ] **2.6** Wire up `cmd/server/main.go`
+- [x] **2.6** Wire up `cmd/server/main.go`
   - Create calculator with all operators registered
   - Create handler with calculator injected
   - Create `http.ServeMux`, register routes
@@ -479,7 +481,7 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
   - Graceful shutdown on SIGINT/SIGTERM
   - Log server start/stop
 
-- [ ] **2.7** Write handler unit tests (`internal/handler/handler_test.go`)
+- [x] **2.7** Write handler unit tests (`internal/handler/handler_test.go`)
   - Use `httptest.NewRecorder()` for unit tests
   - Tests for `POST /api/calculate`:
     - Valid addition → 200, correct result
@@ -499,22 +501,22 @@ Since there is no HTTP server yet, manual testing is done via `go test` output:
   - Test for unsupported method:
     - `GET /api/calculate` → 405
 
-- [ ] **2.8** Write integration test (full HTTP round-trip)
+- [x] **2.8** Write integration test (full HTTP round-trip)
   - Use `httptest.NewServer()` to spin up the full server with middleware
   - Test a real HTTP request through the full middleware chain
   - Verify CORS headers are present
   - Verify logging doesn't break the response
 
-- [ ] **2.9** Update `Makefile`
+- [x] **2.9** Update `Makefile`
   - `make run-backend` — now runs the actual server
   - `make test-backend` — runs all backend tests
   - `make coverage-backend` — generates coverage report with `-coverprofile`
 
-- [ ] **2.10** Run full test suite and verify coverage
+- [x] **2.10** Run full test suite and verify coverage
   - `go test ./... -v -cover`
   - Target: 95%+ across all packages
 
-- [ ] **2.11** Commit all changes
+- [x] **2.11** Commit all changes
 
 ### Manual Test Scenarios (Session 2)
 
@@ -1172,7 +1174,7 @@ Update this section at the start/end of each session to track overall progress.
 | Session | Status | Date Started | Date Completed | Notes |
 |---------|--------|-------------|----------------|-------|
 | 1 — Go Calculation Engine | Completed | 2026-03-17 | 2026-03-17 | All tests pass, 95.1% coverage |
-| 2 — Go HTTP API Layer | Not Started | — | — | — |
+| 2 — Go HTTP API Layer | Completed | 2026-03-17 | 2026-03-17 | All tests pass, typed errors, full middleware chain |
 | 3 — Frontend Scaffolding | Not Started | — | — | — |
 | 4 — Calculator Logic & UI | Not Started | — | — | — |
 | 5 — Styling & Polish | Not Started | — | — | — |

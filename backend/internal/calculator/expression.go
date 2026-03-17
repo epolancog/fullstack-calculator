@@ -1,7 +1,6 @@
 package calculator
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -46,7 +45,7 @@ var operators = map[string]operatorInfo{
 func tokenize(expr string) ([]token, error) {
 	expr = strings.TrimSpace(expr)
 	if expr == "" {
-		return nil, errors.New("empty expression")
+		return nil, InvalidExpressionError{Detail: "empty expression"}
 	}
 
 	var tokens []token
@@ -65,7 +64,7 @@ func tokenize(expr string) ([]token, error) {
 		if i+4 <= len(expr) && expr[i:i+4] == "sqrt" {
 			// Ensure sqrt is not followed by a digit/letter (require space or paren)
 			if i+4 < len(expr) && (unicode.IsDigit(rune(expr[i+4])) || unicode.IsLetter(rune(expr[i+4]))) {
-				return nil, fmt.Errorf("invalid token at position %d: sqrt requires a space before its operand", i)
+				return nil, InvalidExpressionError{Detail: fmt.Sprintf("invalid token at position %d: sqrt requires a space before its operand", i)}
 			}
 			tokens = append(tokens, token{kind: tokenFunction, value: "sqrt"})
 			i += 4
@@ -101,7 +100,7 @@ func tokenize(expr string) ([]token, error) {
 			for i < len(expr) && (unicode.IsDigit(rune(expr[i])) || rune(expr[i]) == '.') {
 				if rune(expr[i]) == '.' {
 					if hasDecimal {
-						return nil, fmt.Errorf("invalid number at position %d: multiple decimal points", start)
+						return nil, InvalidExpressionError{Detail: fmt.Sprintf("invalid number at position %d: multiple decimal points", start)}
 					}
 					hasDecimal = true
 				}
@@ -109,7 +108,7 @@ func tokenize(expr string) ([]token, error) {
 			}
 			numStr := expr[start:i]
 			if numStr == "-" || numStr == "." || numStr == "-." {
-				return nil, fmt.Errorf("invalid number at position %d: %q", start, numStr)
+				return nil, InvalidExpressionError{Detail: fmt.Sprintf("invalid number at position %d: %q", start, numStr)}
 			}
 			tokens = append(tokens, token{kind: tokenNumber, value: numStr})
 			continue
@@ -122,7 +121,7 @@ func tokenize(expr string) ([]token, error) {
 			continue
 		}
 
-		return nil, fmt.Errorf("invalid character at position %d: %q", i, string(ch))
+		return nil, InvalidExpressionError{Detail: fmt.Sprintf("invalid character at position %d: %q", i, string(ch))}
 	}
 
 	return tokens, nil
@@ -196,7 +195,7 @@ func shuntingYard(tokens []token) ([]rpnToken, error) {
 				output = append(output, rpnToken{kind: top.kind, value: top.value})
 			}
 			if !found {
-				return nil, errors.New("mismatched parentheses: extra closing parenthesis")
+				return nil, InvalidExpressionError{Detail: "mismatched parentheses: extra closing parenthesis"}
 			}
 			// If the top of the stack is a function, pop it to output
 			if len(opStack) > 0 && opStack[len(opStack)-1].kind == tokenFunction {
@@ -212,7 +211,7 @@ func shuntingYard(tokens []token) ([]rpnToken, error) {
 		top := opStack[len(opStack)-1]
 		opStack = opStack[:len(opStack)-1]
 		if top.kind == tokenLeftParen {
-			return nil, errors.New("mismatched parentheses: extra opening parenthesis")
+			return nil, InvalidExpressionError{Detail: "mismatched parentheses: extra opening parenthesis"}
 		}
 		output = append(output, rpnToken{kind: top.kind, value: top.value})
 	}
@@ -233,7 +232,7 @@ func evaluateRPN(rpn []rpnToken) (float64, error) {
 		case tokenNumber:
 			val, err := strconv.ParseFloat(tok.value, 64)
 			if err != nil {
-				return 0, fmt.Errorf("invalid number: %q", tok.value)
+				return 0, InvalidExpressionError{Detail: fmt.Sprintf("invalid number: %q", tok.value)}
 			}
 			stack = append(stack, val)
 
@@ -273,19 +272,19 @@ func evaluateRPN(rpn []rpnToken) (float64, error) {
 		case tokenFunction:
 			if tok.value == "sqrt" {
 				if len(stack) == 0 {
-					return 0, errors.New("sqrt requires an operand")
+					return 0, InvalidExpressionError{Detail: "sqrt requires an operand"}
 				}
 				a := stack[len(stack)-1]
 				stack = stack[:len(stack)-1]
 				if a < 0 {
-					return 0, errors.New("square root of negative number is not allowed")
+					return 0, SqrtNegativeError{}
 				}
 				stack = append(stack, math.Sqrt(a))
 			}
 
 		case tokenOperator:
 			if len(stack) < 2 {
-				return 0, fmt.Errorf("not enough operands for operator %q", tok.value)
+				return 0, InvalidExpressionError{Detail: fmt.Sprintf("not enough operands for operator %q", tok.value)}
 			}
 			b := stack[len(stack)-1]
 			a := stack[len(stack)-2]
@@ -301,13 +300,13 @@ func evaluateRPN(rpn []rpnToken) (float64, error) {
 				result = a * b
 			case "/":
 				if b == 0 {
-					return 0, errors.New("division by zero is not allowed")
+					return 0, DivisionByZeroError{}
 				}
 				result = a / b
 			case "^":
 				result = math.Pow(a, b)
 			default:
-				return 0, fmt.Errorf("unknown operator: %q", tok.value)
+				return 0, InvalidOperatorError{Operator: tok.value}
 			}
 			stack = append(stack, result)
 			lastBinaryOp = tok.value
@@ -315,14 +314,14 @@ func evaluateRPN(rpn []rpnToken) (float64, error) {
 	}
 
 	if len(stack) == 0 {
-		return 0, errors.New("empty expression")
+		return 0, InvalidExpressionError{Detail: "empty expression"}
 	}
 	if len(stack) > 1 {
 		// If % was applied with no left operand (implicit 0), return 0
 		if implicitZeroPercent {
 			return 0, nil
 		}
-		return 0, errors.New("malformed expression: too many values")
+		return 0, InvalidExpressionError{Detail: "malformed expression: too many values"}
 	}
 	return stack[0], nil
 }
