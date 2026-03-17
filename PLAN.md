@@ -547,30 +547,30 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
 
 ### Steps
 
-- [ ] **3.1** Scaffold Vite React TypeScript project
+- [x] **3.1** Scaffold Vite React TypeScript project
   - `npm create vite@latest frontend -- --template react-ts`
   - Verify the project runs: `cd frontend && npm install && npm run dev`
 
-- [ ] **3.2** Install and configure Tailwind CSS v4
+- [x] **3.2** Install and configure Tailwind CSS v4
   - Install Tailwind and its Vite plugin
   - Configure `index.css` with Tailwind directives
   - Verify Tailwind classes render correctly
 
-- [ ] **3.3** Install and configure CVA
+- [x] **3.3** Install and configure CVA
   - `npm install class-variance-authority`
   - Install `clsx` and `tailwind-merge` for utility class merging
   - Create a `cn()` utility function (`src/lib/utils.ts`): `cn(...inputs) => twMerge(clsx(...inputs))`
 
-- [ ] **3.4** Install and configure testing tools
+- [x] **3.4** Install and configure testing tools
   - `npm install -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom`
   - Configure `vitest` in `vite.config.ts` (jsdom environment, setup file)
   - Create test setup file (`src/test/setup.ts`) importing `@testing-library/jest-dom`
 
-- [ ] **3.5** Configure Vite dev proxy
+- [x] **3.5** Configure Vite dev proxy
   - In `vite.config.ts`, proxy `/api` to `http://localhost:8080`
   - This avoids CORS issues during development
 
-- [ ] **3.6** Define shared TypeScript types (`src/types/index.ts`)
+- [x] **3.6** Define shared TypeScript types (`src/types/index.ts`)
   - ```typescript
     // API types
     interface CalculateRequest {
@@ -609,7 +609,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
     }
     ```
 
-- [ ] **3.7** Implement API client (`src/api/calculator.ts`)
+- [x] **3.7** Implement API client (`src/api/calculator.ts`)
   - `CalculatorApi` interface:
     ```typescript
     interface CalculatorApi {
@@ -623,7 +623,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Handles error responses: parse error JSON, throw typed error
   - Base URL configurable (default: `/api` for Vite proxy)
 
-- [ ] **3.8** Write API client tests (`src/api/calculator.test.ts`)
+- [x] **3.8** Write API client tests (`src/api/calculator.test.ts`)
   - Mock `fetch` using `vi.fn()` (Vitest)
   - Test successful calculate call → returns result
   - Test successful expression call → returns result + expression
@@ -631,7 +631,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Test API error response → throws with error code and message
   - Test network error → throws appropriate error
 
-- [ ] **3.9** Implement Button component (`src/components/Button/Button.tsx`)
+- [x] **3.9** Implement Button component (`src/components/Button/Button.tsx`)
   - CVA variants:
     - `variant`: number (neutral), operator (accent), action (secondary), equals (primary/highlight)
     - `size`: default (1 column), wide (2 columns)
@@ -639,7 +639,7 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Basic glassmorphism styling (transparent bg, border, hover/active states)
   - Press animation: scale down on `:active`
 
-- [ ] **3.10** Write Button tests (`src/components/Button/Button.test.tsx`)
+- [x] **3.10** Write Button tests (`src/components/Button/Button.test.tsx`)
   - Renders label text
   - Applies correct variant classes
   - Applies wide class for size="wide"
@@ -647,26 +647,26 @@ Start the server with `make run-backend` (or `cd backend && go run ./cmd/server/
   - Renders with aria-label when provided
   - Disabled button doesn't fire onClick
 
-- [ ] **3.11** Implement ErrorMessage component (`src/components/ErrorMessage/ErrorMessage.tsx`)
+- [x] **3.11** Implement ErrorMessage component (`src/components/ErrorMessage/ErrorMessage.tsx`)
   - Props: `message: string | null`
   - Renders nothing when message is null
   - Displays error with icon and text
   - Subtle red/warning styling compatible with glass theme
 
-- [ ] **3.12** Write ErrorMessage tests (`src/components/ErrorMessage/ErrorMessage.test.tsx`)
+- [x] **3.12** Write ErrorMessage tests (`src/components/ErrorMessage/ErrorMessage.test.tsx`)
   - Renders nothing when message is null
   - Renders error message text
   - Has appropriate role/aria attributes for accessibility
 
-- [ ] **3.13** Update `Makefile`
+- [x] **3.13** Update `Makefile`
   - `make install-frontend` — `npm install`
   - `make test-frontend` — run Vitest
   - `make dev-frontend` — run Vite dev server
 
-- [ ] **3.14** Run tests and verify all pass
+- [x] **3.14** Run tests and verify all pass
   - `cd frontend && npm test`
 
-- [ ] **3.15** Commit all changes
+- [x] **3.15** Commit all changes
 
 ### Manual Test Scenarios (Session 3)
 
@@ -1175,7 +1175,7 @@ Update this section at the start/end of each session to track overall progress.
 |---------|--------|-------------|----------------|-------|
 | 1 — Go Calculation Engine | Completed | 2026-03-17 | 2026-03-17 | All tests pass, 95.1% coverage |
 | 2 — Go HTTP API Layer | Completed | 2026-03-17 | 2026-03-17 | All tests pass, typed errors, full middleware chain |
-| 3 — Frontend Scaffolding | Not Started | — | — | — |
+| 3 — Frontend Scaffolding | Completed | 2026-03-17 | 2026-03-17 | Vite 6 (Node compat), 20 tests pass, Tailwind v4 + CVA + API client + Button + ErrorMessage |
 | 4 — Calculator Logic & UI | Not Started | — | — | — |
 | 5 — Styling & Polish | Not Started | — | — | — |
 | 6 — Docker, CI, README | Not Started | — | — | — |
